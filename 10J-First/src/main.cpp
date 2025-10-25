@@ -159,16 +159,15 @@ void autonomous() {
         intake.move_velocity(100);
         
         // Move to recorded coordinates
-        chassis.moveToPoint(24.156, -1.453, 5);  // Move to exact position
+        chassis.moveToPoint(24.156, -1.453, 5);  // Move to the corner of the center square where the 3 blocks are placed
         chassis.waitUntilDone();  // Wait until movement is complete
-        chassis.turnToHeading(-287.840, 1000);  // Turn to exact recorded angle
+        chassis.turnToHeading(-287.840, 1000);  // Turn to loader
         chassis.waitUntilDone();  // Wait until turn is complete
-
-        chassis.moveToPoint(-2.738, 2.887, 5);  // Move to exact position
+        chassis.turnToHeading(-287.840, 1000);  // Turn to goal
+        chassis.waitUntilDone();
+        chassis.moveToPoint(-2.738, 2.887, 5);  // Move to goal
         chassis.waitUntilDone();  // Wait until movement is complete
-        chassis.turnToHeading(-763.364, 1000);  // Turn to exact recorded angle
-        chassis.waitUntilDone();  // Wait until turn is complete
-
+ 
         intake.move_velocity(0); 
 
     } else if (!isRedAlliance && isLeftSide) {
