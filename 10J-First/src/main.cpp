@@ -2,11 +2,15 @@
 #include "main.h"
 #include "lemlib/chassis/chassis.hpp"
 
-pros::MotorGroup left_motors({11, 12, 13}, pros::MotorGearset::blue); // left motors use 600 RPM cartridges
-pros::MotorGroup right_motors({-18, -19, -20}, pros::MotorGearset::blue); // right motors use 600 RPM cartridges
-pros::Motor intake(1);
-pros::Motor intake2(15);
-pros::Motor intake3(16);
+pros::MotorGroup left_motors({-11, -12, -13}, pros::MotorGearset::blue); // left motors use 600 RPM cartridges
+pros::MotorGroup right_motors({18, 19, 20}, pros::MotorGearset::blue); // right motors use 600 RPM cartridges
+pros::Motor intake(-4);
+pros::Motor intake2(8);
+pros::Motor intake3(-15);
+
+// Define two independent pneumatic solenoids
+pros::ADIDigitalOut solenoidD ('D');  // First solenoid on port D //one controls match loader
+pros::ADIDigitalOut solenoidH('H');  // Second solenoid on port H // one controls top matchloader thingy
 
 lemlib::Drivetrain drivetrain(
 	&left_motors,  // pointer to left motors
@@ -17,32 +21,22 @@ lemlib::Drivetrain drivetrain(
 	2.0          // horizontal drift of 2 (no traction wheels)
 );
 
-pros::Rotation rotation_sensor(2);
+pros::Rotation rotation_sensor(9);
 pros::Imu imu(3);
 
-// Create a new optical shaft encoder on ports 'A' and 'B'
-// this sensor is also reversed
-pros::adi::Encoder verticalEncoder('A', 'B', true);
-// create a new vertical tracking wheel
-// it's using a new 2.75 inch wheel
-// it's also 5 inches away from the tracking center. This tracking wheel is to the left
-// of the tracking center, so we use a negative distance. If it was to the right of the
-// tracking center, we would use a positive distance
-lemlib::TrackingWheel verticalTrackingWheel(&verticalEncoder, lemlib::Omniwheel::NEW_275, -5);
-// create a new optical shaft encoder on ports `C` and `D`
-// this sensor is not reversed
-pros::adi::Encoder horizontalEncoder('C', 'D', false);
-// create a new horizontal tracking wheel
-// it's using an old 3.25 inch wheel
-// it's also 2 inches away from the tracking center. This tracking wheel is to the back
-// of the tracking center, so we use a negative distance. If it was to the front of the
-// tracking center, we would use a positive distance
-// this wheel also has a 5:3 gear ratio
-lemlib::TrackingWheel horizontalTrackingWheel(&horizontalEncoder, lemlib::Omniwheel::OLD_325, -2, 5.0/3.0);
+// tracking wheels
+// horizontal tracking wheel encoder. Rotation sensor, port 20, not reversed
+pros::Rotation horizontalEnc(20);
+// vertical tracking wheel encoder. Rotation sensor, port 11, reversed
+pros::Rotation verticalEnc(-11);
+// horizontal tracking wheel. 2.75" diameter, 5.75" offset, back of the robot (negative)
+lemlib::TrackingWheel horizontal(&horizontalEnc, lemlib::Omniwheel::NEW_275, -5.75);
+// vertical tracking wheel. 2.75" diameter, 2.5" offset, left of the robot (negative)
+lemlib::TrackingWheel vertical(&verticalEnc, lemlib::Omniwheel::NEW_275, -2.5);
 
-lemlib::OdomSensors sensors(&verticalTrackingWheel, // vertical tracking wheel 1, set to null
+lemlib::OdomSensors sensors(&vertical, // vertical tracking wheel 1, set to null
                             nullptr, // vertical tracking wheel 2, set to nullptr as we are using IMEs
-                            &horizontalTrackingWheel, // horizontal tracking wheel 1
+                            &horizontal, // horizontal tracking wheel 1
                             nullptr, // horizontal tracking wheel 2, set to nullptr as we don't have a second one
                             &imu // inertial sensor
 );
@@ -157,17 +151,25 @@ bool isRedAlliance = true;
 bool isLeftSide = true;
 
 void autonomous() {
+    // Reset position to (0,0,0) at start
+    chassis.setPose(0, 0, 0);
+    
     if (isRedAlliance && isLeftSide) {
         // ---- RED LEFT ----
         intake.move_velocity(100);
-        chassis.moveToPoint(-24, 24, 5); // drive forward 1 tile
-        chassis.turnToHeading(337, 1000); // turn to face loader (top center)
-        // need code for holding intake until bot reached loader
-        chassis.moveToPoint(-72, 45, 5); // drive toward loader
-        // need code for holding intake until bot reached goal
-        chassis.turnToHeading(-90, 1000); // turn to face goal (bottom left corner)
-        chassis.moveToPoint(-24, 45, 5); // back into goal
-        intake.move_velocity(0);
+        
+        // Move to recorded coordinates
+        chassis.moveToPoint(24.156, -1.453, 5);  // Move to exact position
+        chassis.waitUntilDone();  // Wait until movement is complete
+        chassis.turnToHeading(-287.840, 1000);  // Turn to exact recorded angle
+        chassis.waitUntilDone();  // Wait until turn is complete
+
+        chassis.moveToPoint(-2.738, 2.887, 5);  // Move to exact position
+        chassis.waitUntilDone();  // Wait until movement is complete
+        chassis.turnToHeading(-763.364, 1000);  // Turn to exact recorded angle
+        chassis.waitUntilDone();  // Wait until turn is complete
+
+        intake.move_velocity(0); 
 
     } else if (!isRedAlliance && isLeftSide) {
         // ---- BLUE LEFT ----
@@ -223,21 +225,97 @@ void autonomous() {
  */
 void opcontrol() {
     pros::Controller master(pros::E_CONTROLLER_MASTER);
-    // int count = 0;
     
     while (true) {
-        // Read joystick values
-        // int dir = master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
-        // int turn = master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X);
-
-        //  // deadband
-
-        // left_motors.move_velocity(dir + turn);
-        // right_motors.move_velocity(dir - turn);
-        intake.move_velocity(100);
-        intake2.move_velocity(100);
-        intake3.move_velocity(100);
+        // Press A button to run autonomous
+        // if (master.get_digital(pros::E_CONTROLLER_DIGITAL_A)) {
+        //     autonomous();  // This will run your autonomous routine
+        //     pros::delay(1000);  // Wait 1 second before allowing driver control again
+        // }
         
+        int dir = master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
+        int turn = master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
+
+        // Apply deadband to ignore small joystick movements
+        if (abs(dir) < 10) dir = 0;
+        if (abs(turn) < 10) turn = 0;
+
+        // quadratic for better control
+        auto curve = [](double x) -> double {
+            if (x == 0) return 0;
+            return pow(x/10, 2) * (std::abs(x)/x);
+        };
+
+        // Scale inputs to velocity (-600 to 600 for blue cartridges)
+        double vel_dir = curve(dir) * 6;
+        double vel_turn = curve(turn) * 6;
+
+        left_motors.move_velocity(vel_dir + vel_turn);
+        right_motors.move_velocity(vel_dir - vel_turn);
+        
+        // Control intake with R1 (forward) and R2 (reverse) toggle
+        static bool intake_forward = false;
+        static bool intake_reverse = false;
+        static bool last_r1_state = false;
+        static bool last_r2_state = false;
+        
+        bool current_r1 = master.get_digital(pros::E_CONTROLLER_DIGITAL_R1);
+        bool current_r2 = master.get_digital(pros::E_CONTROLLER_DIGITAL_R2);
+        
+        // Toggle forward on R1
+        if (current_r1 && !last_r1_state) {
+            intake_forward = !intake_forward;  // Toggle forward
+            intake_reverse = false;  // Turn off reverse if it was on
+        }
+        last_r1_state = current_r1;
+        
+        // Toggle reverse on R2
+        if (current_r2 && !last_r2_state) {
+            intake_reverse = !intake_reverse;  // Toggle reverse
+            intake_forward = false;  // Turn off forward if it was on
+        }
+        last_r2_state = current_r2;
+        
+        // Run intake based on which button was toggled
+        if (intake_forward) {
+            intake.move(600);     // Forward at full speed
+            intake2.move(300);
+            intake3.move(300);
+        } else if (intake_reverse) {
+            intake.move(-600);    // Reverse at full speed
+            intake2.move(-300);
+            intake3.move(-300);
+        } else {
+            intake.move(0);       // Stop
+            intake2.move(0);
+            intake3.move(0);
+        }
+
+        // // Control solenoid on port D with L1 button
+        // static bool solenoidD_state = false;
+        // static bool l1_last_state = false;
+        // bool l1_current_state = master.get_digital(pros::E_CONTROLLER_DIGITAL_L1);
+        
+        // if (l1_current_state && !l1_last_state) {  // L1 just pressed
+        //     solenoidD_state = !solenoidD_state;    // Toggle state
+        //     solenoidD.set_value(solenoidD_state);  // Set solenoid D to new state
+        // }
+        // l1_last_state = l1_current_state;
+
+        // // Control solenoid on port H with L2 button
+        // static bool solenoidH_state = false;
+        // static bool l2_last_state = false;
+        // bool l2_current_state = master.get_digital(pros::E_CONTROLLER_DIGITAL_L2);
+        
+        // if (l2_current_state && !l2_last_state) {  // L2 just pressed
+        //     solenoidH_state = !solenoidH_state;    // Toggle state
+        //     solenoidH.set_value(solenoidH_state);  // Set solenoid H to new state
+        // }
+        // l2_last_state = l2_current_state;
+        
+
+
+
         // if (count % 5 == 0) {
         //     pros::lcd::print(0, "Dir:%d Turn:%d X:%.1f Y:%.1f T:%.1f",
         //          dir, turn,
