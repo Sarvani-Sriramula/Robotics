@@ -1,16 +1,17 @@
 #include "lemlib/api.hpp" // IWYU pragma: keep
 #include "main.h"
 #include "lemlib/chassis/chassis.hpp"
+#include "pros/misc.h"
 
-pros::MotorGroup left_motors({-11, -12, -13}, pros::MotorGearset::blue); // left motors use 600 RPM cartridges
+pros::MotorGroup left_motors({-11, -1, -13}, pros::MotorGearset::blue); // left motors use 600 RPM cartridges
 pros::MotorGroup right_motors({18, 19, 20}, pros::MotorGearset::blue); // right motors use 600 RPM cartridges
-pros::Motor intake(-4);
+pros::Motor intake(-15);
 pros::Motor intake2(8);
-pros::Motor intake3(-15);
+pros::Motor intake3(-4);
 
 // Define two independent pneumatic solenoids
-pros::ADIDigitalOut solenoidD ('D');  // First solenoid on port D //one controls match loader
-pros::ADIDigitalOut solenoidH('H');  // Second solenoid on port H // one controls top matchloader thingy
+pros::ADIDigitalOut solD ('D');  // First solenoid on port D //one controls intake matchloader
+pros::ADIDigitalOut solH('H');  // Second solenoid on port H // one controls top matchloader
 
 lemlib::Drivetrain drivetrain(
 	&left_motors,  // pointer to left motors
@@ -21,18 +22,18 @@ lemlib::Drivetrain drivetrain(
 	2.0          // horizontal drift of 2 (no traction wheels)
 );
 
-pros::Rotation rotation_sensor(9);
-pros::Imu imu(3);
+// pros::Rotation rotation_sensor(9);
+pros::Imu imu(7);
 
 // tracking wheels
 // horizontal tracking wheel encoder. Rotation sensor, port 20, not reversed
-pros::Rotation horizontalEnc(20);
+pros::Rotation horizontalEnc(21);
 // vertical tracking wheel encoder. Rotation sensor, port 11, reversed
-pros::Rotation verticalEnc(-11);
+pros::Rotation verticalEnc(3);
 // horizontal tracking wheel. 2.75" diameter, 5.75" offset, back of the robot (negative)
-lemlib::TrackingWheel horizontal(&horizontalEnc, lemlib::Omniwheel::NEW_275, -5.75);
+lemlib::TrackingWheel horizontal(&horizontalEnc, lemlib::Omniwheel::NEW_2, -5.75);
 // vertical tracking wheel. 2.75" diameter, 2.5" offset, left of the robot (negative)
-lemlib::TrackingWheel vertical(&verticalEnc, lemlib::Omniwheel::NEW_275, -2.5);
+lemlib::TrackingWheel vertical(&verticalEnc, lemlib::Omniwheel::NEW_2, -2.5);
 
 lemlib::OdomSensors sensors(&vertical, // vertical tracking wheel 1, set to null
                             nullptr, // vertical tracking wheel 2, set to nullptr as we are using IMEs
@@ -75,20 +76,36 @@ lemlib::Chassis chassis(
     sensors     // pointer to odometry sensors (correct variable name)    
 ); 
 
+void telemetry(){
+    while (true) {
+        pros::delay(500);
+        pros::lcd::print(0, "X: %f", chassis.getPose().x); // x
+        pros::lcd::print(1, "Y: %f", chassis.getPose().y); // y
+        pros::lcd::print(2, "Theta: %f", chassis.getPose().theta); // heading
+        pros::lcd::print(3, "IMU Heading: %f", imu.get_heading()); // heading
+        pros::delay(20);
+    }
+}
+
 void initialize() {
-    pros::lcd::initialize(); // initialize brain screen
-    chassis.calibrate(); // calibrate sensors
-    // print position to brain screen   
-    pros::Task screen_task([&]() {
-        while (true) {
-            // print robot location to the brain screen
-            pros::lcd::print(0, "X: %f", chassis.getPose().x); // x
-            pros::lcd::print(1, "Y: %f", chassis.getPose().y); // y
-            pros::lcd::print(2, "Theta: %f", chassis.getPose().theta); // heading
-            // delay to save resources
-            pros::delay(20);
-        }
-    });
+    // pros::lcd::initialize(); // initialize brain screen
+    // chassis.calibrate(); // calibrate sensors
+    // // print position to brain screen   
+    // pros::Task screen_task([&]() {
+    //     while (true) {
+    //         // print robot location to the brain screen
+    //         pros::lcd::print(0, "X: %f", chassis.getPose().x); // x
+    //         pros::lcd::print(1, "Y: %f", chassis.getPose().y); // y
+    //         pros::lcd::print(2, "Theta: %f", chassis.getPose().theta); // heading
+    //         lemlib::telemetrySink()->info("Chassis pose : {}", chassis.getPose());
+    //         // delay to save resources
+    //         pros::delay(20);
+    //     }
+    // });
+    pros::lcd::initialize();
+    pros::delay(500);
+    chassis.calibrate();
+    pros::Task screen_task(telemetry);
 }
 
 /**
@@ -153,59 +170,75 @@ bool isLeftSide = true;
 void autonomous() {
     // Reset position to (0,0,0) at start
     chassis.setPose(0, 0, 0);
+    intake.move_velocity(127);
+    chassis.moveToPoint(3.043 , 32.767, 1500, {.maxSpeed = 100}); // move to 3 balls
+    pros::delay(500);
+    chassis.swingToHeading(20, lemlib::DriveSide::LEFT, 500); // turn to face small goal
+    chassis.moveToPoint(-2.455, -56.074, 1500, {.maxSpeed = 70}); // go to small goal
+    pros::delay(500);
+    chassis.moveToPoint(2, 2, 2); // go to a little before loader
+    solD.set_value(true); // activate solenoid to grab loader
+    chassis.moveToPoint(2,2,2); // move a little forward to secure loader
+    pros::delay(500);
+    chassis.moveToPoint(-2.455, -56.074, 1500, {.maxSpeed = 70}); // go to large goal
+    pros::delay(500);
+    intake.move_velocity(0);
     
-    if (isRedAlliance && isLeftSide) {
-        // ---- RED LEFT ----
-        intake.move_velocity(100);
+    // if (isRedAlliance && isLeftSide) {
+    //     // ---- RED LEFT ----
+    //     intake.move_velocity(100);
         
-        // Move to recorded coordinates
-        chassis.moveToPoint(24.156, -1.453, 5);  // Move to the corner of the center square where the 3 blocks are placed
-        chassis.waitUntilDone();  // Wait until movement is complete
-        chassis.turnToHeading(-287.840, 1000);  // Turn to loader
-        chassis.waitUntilDone();  // Wait until turn is complete
-        chassis.turnToHeading(-287.840, 1000);  // Turn to goal
-        chassis.waitUntilDone();
-        chassis.moveToPoint(-2.738, 2.887, 5);  // Move to goal
-        chassis.waitUntilDone();  // Wait until movement is complete
+    //     // Move to recorded coordinates
+    //     chassis.moveToPoint(24.156, -1.453, 5);  // Move to the corner of the center square where the 3 blocks are placed
+    //     chassis.waitUntilDone();  // Wait until movement is complete
+    //     chassis.turnToHeading(-287.840, 1000);  // Turn to loader
+    //     chassis.waitUntilDone();  // Wait until turn is complete
+    //     solD.set_value(true);  // Activate solenoid to grab loader
+    //     chassis.turnToHeading(-287.840, 1000);  // Turn to goal
+    //     chassis.waitUntilDone();
+    //     chassis.moveToPoint(-2.738, 2.887, 5);  // Move to goal
+    //     chassis.waitUntilDone();  // Wait until movement is complete
  
-        intake.move_velocity(0); 
+    //     intake.move_velocity(0); 
 
-    } else if (!isRedAlliance && isLeftSide) {
+    // } 
+    // if (!isRedAlliance && isLeftSide) {
         // ---- BLUE LEFT ----
-        intake.move_velocity(100);
-        chassis.moveToPoint(24, -24, 5);
-        chassis.turnToHeading(337, 1000);
-        // need code for holding intake until bot reached loader
-        chassis.moveToPoint(72, -45, 5);
-        // need code for holding intake until bot reached goal
-        chassis.turnToHeading(-90, 1000);
-        chassis.moveToPoint(24, -45, 5);
-        intake.move_velocity(0);
+        // intake.move_velocity(127);
+        // chassis.moveToPoint(3.043 , 32.767, 5);
+        // chassis.turnToHeading(13.256, 1000);
+        // // need code for holding intake until bot reached loader
+        // chassis.moveToPoint(72, -45, 5);
+        // // need code for holding intake until bot reached goal
+        // chassis.turnToHeading(-90, 1000);
+        // chassis.moveToPoint(24, -45, 5);
+        // intake.move_velocity(0);
 
-    } else if (isRedAlliance && !isLeftSide) {
-        // ---- RED RIGHT ---- 
-        intake.move_velocity(100);
-        chassis.moveToPoint(-24, -24, 5);
-        chassis.turnToHeading(337, 1000);
-        // need code for holding intake until bot reached loader
-        chassis.moveToPoint(-72, -45, 5);
-        // need code for holding intake until bot reached goal
-        chassis.turnToHeading(-90, 1000);
-        chassis.moveToPoint(-24, -45, 5);
-        intake.move_velocity(0);
+    // } else if (isRedAlliance && !isLeftSide) {
+    //     // ---- RED RIGHT ---- 
+    //     intake.move_velocity(100);
+    //     chassis.moveToPoint(-24, -24, 5);
+    //     chassis.turnToHeading(337, 1000);
+    //     // need code for holding intake until bot reached loader
+    //     chassis.moveToPoint(-72, -45, 5);
+    //     // need code for holding intake until bot reached goal
+    //     chassis.turnToHeading(-90, 1000);
+    //     chassis.moveToPoint(-24, -45, 5);
+    //     intake.move_velocity(0);
 
-    } else {
-        // ---- BLUE RIGHT ----
-        intake.move_velocity(100);
-        chassis.moveToPoint(24, 24, 5);
-        chassis.turnToHeading(337, 1000);
-        // need code for holding intake until bot reached loader
-        chassis.moveToPoint(72, 45, 5);
-        // need code for holding intake until bot reached goal
-        chassis.turnToHeading(-90, 1000);
-        chassis.moveToPoint(24, 45, 5);
-        intake.move_velocity(0);
-    }
+    // } else {
+    //     // ---- BLUE RIGHT ----
+    //     intake.move_velocity(100);
+    //     chassis.moveToPoint(24, 24, 5);
+    //     chassis.turnToHeading(337, 1000);
+    //     // need code for holding intake until bot reached loader
+    //     chassis.moveToPoint(72, 45, 5);
+    //     // need code for holding intake until bot reached goal
+    //     chassis.turnToHeading(-90, 1000);
+    //     chassis.moveToPoint(24, 45, 5);
+    //     intake.move_velocity(0);
+    
+
 }
 
  
@@ -225,13 +258,10 @@ void autonomous() {
 void opcontrol() {
     pros::Controller master(pros::E_CONTROLLER_MASTER);
     
-    while (true) {
-        // Press A button to run autonomous
-        // if (master.get_digital(pros::E_CONTROLLER_DIGITAL_A)) {
-        //     autonomous();  // This will run your autonomous routine
-        //     pros::delay(1000);  // Wait 1 second before allowing driver control again
-        // }
-        
+    while (true) {        
+        // pros::lcd::print(0, "X: %f", chassis.getPose().x);
+        // pros::lcd::print(1, "Y: %f", chassis.getPose().y);
+
         int dir = master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
         int turn = master.get_analog(pros::E_CONTROLLER_ANALOG_RIGHT_X);
 
@@ -242,7 +272,7 @@ void opcontrol() {
         // quadratic for better control
         auto curve = [](double x) -> double {
             if (x == 0) return 0;
-            return pow(x/10, 2) * (std::abs(x)/x);
+            return pow(x*0.0787, 2) * (std::abs(x)/x);
         };
 
         // Scale inputs to velocity (-600 to 600 for blue cartridges)
@@ -252,14 +282,23 @@ void opcontrol() {
         left_motors.move_velocity(vel_dir + vel_turn);
         right_motors.move_velocity(vel_dir - vel_turn);
         
+
+
         // Control intake with R1 (forward) and R2 (reverse) toggle
         static bool intake_forward = false;
         static bool intake_reverse = false;
+        static bool single_intake_mode = false;
+        static bool goal_intake_mode = false;
+
         static bool last_r1_state = false;
         static bool last_r2_state = false;
+        static bool last_l1_state = false;
+        static bool last_l2_state = false;
         
         bool current_r1 = master.get_digital(pros::E_CONTROLLER_DIGITAL_R1);
         bool current_r2 = master.get_digital(pros::E_CONTROLLER_DIGITAL_R2);
+        bool current_l1 = master.get_digital(pros::E_CONTROLLER_DIGITAL_L1);
+        bool current_l2 = master.get_digital(pros::E_CONTROLLER_DIGITAL_L2);
         
         // Toggle forward on R1
         if (current_r1 && !last_r1_state) {
@@ -274,56 +313,66 @@ void opcontrol() {
             intake_forward = false;  // Turn off forward if it was on
         }
         last_r2_state = current_r2;
+
+        // Toggle reverse on L1
+        if (current_l1 && !last_l1_state) {
+            single_intake_mode = !single_intake_mode;  // Toggle reverse
+        }
+        last_l1_state = current_l1;
+
+        // Toggle reverse on L2
+        if (current_l2 && !last_l2_state) {
+            goal_intake_mode = !goal_intake_mode;  // Toggle reverse
+        }
+        last_l2_state = current_l2;
         
         // Run intake based on which button was toggled
         if (intake_forward) {
-            intake.move(600);     // Forward at full speed
-            intake2.move(300);
-            intake3.move(300);
+            intake.move(127);     // Forward at full speed
+            intake2.move(127);
+            intake3.move(127);
         } else if (intake_reverse) {
-            intake.move(-600);    // Reverse at full speed
-            intake2.move(-300);
-            intake3.move(-300);
+            intake.move(-127);    // Reverse at full speed
+            intake2.move(-127);
+            intake3.move(-127);
+        } else if (single_intake_mode) {
+            intake.move(127);     
+            intake2.move(0);
+            intake3.move(0);
+        } else if (goal_intake_mode) {
+            intake.move(127);       
+            intake2.move(127);
+            intake3.move(-127);
         } else {
             intake.move(0);       // Stop
             intake2.move(0);
             intake3.move(0);
         }
 
-        // // Control solenoid on port D with L1 button
-        // static bool solenoidD_state = false;
-        // static bool l1_last_state = false;
-        // bool l1_current_state = master.get_digital(pros::E_CONTROLLER_DIGITAL_L1);
+
+
+        // Control solenoid on port D with L1 button
+        static bool solD_state = false;
+        static bool a_last_state = false;
+        bool a_current_state = master.get_digital(pros::E_CONTROLLER_DIGITAL_A);
         
-        // if (l1_current_state && !l1_last_state) {  // L1 just pressed
-        //     solenoidD_state = !solenoidD_state;    // Toggle state
-        //     solenoidD.set_value(solenoidD_state);  // Set solenoid D to new state
-        // }
-        // l1_last_state = l1_current_state;
+        if (a_current_state && !a_last_state) {  // L1 just pressed
+            solD_state = !solD_state;    // Toggle state
+            solD.set_value(solD_state);  // Set solenoid D to new state
+        }
+        a_last_state = a_current_state;
 
-        // // Control solenoid on port H with L2 button
-        // static bool solenoidH_state = false;
-        // static bool l2_last_state = false;
-        // bool l2_current_state = master.get_digital(pros::E_CONTROLLER_DIGITAL_L2);
+        // Control solenoid on port H with L2 button
+        static bool solH_state = false;
+        static bool x_last_state = false;
+        bool x_current_state = master.get_digital(pros::E_CONTROLLER_DIGITAL_X);
         
-        // if (l2_current_state && !l2_last_state) {  // L2 just pressed
-        //     solenoidH_state = !solenoidH_state;    // Toggle state
-        //     solenoidH.set_value(solenoidH_state);  // Set solenoid H to new state
-        // }
-        // l2_last_state = l2_current_state;
-        
+        if (x_current_state && !x_last_state) {  // L2 just pressed
+            solH_state = !solH_state;    // Toggle state
+            solH.set_value(solH_state);  // Set solenoid H to new state
+        }
+        x_last_state = x_current_state;
 
-
-
-        // if (count % 5 == 0) {
-        //     pros::lcd::print(0, "Dir:%d Turn:%d X:%.1f Y:%.1f T:%.1f",
-        //          dir, turn,
-        //          chassis.getPose().x,
-        //          chassis.getPose().y,
-        //          chassis.getPose().theta);
-        // }
-
-        // count++;
 
         // Small delay for smooth loop
         pros::delay(20);
