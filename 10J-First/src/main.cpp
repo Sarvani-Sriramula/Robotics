@@ -31,9 +31,9 @@ pros::Rotation horizontalEnc(21);
 // vertical tracking wheel encoder. Rotation sensor, port 11, reversed
 pros::Rotation verticalEnc(3);
 // horizontal tracking wheel. 2.75" diameter, 5.75" offset, back of the robot (negative)
-lemlib::TrackingWheel horizontal(&horizontalEnc, lemlib::Omniwheel::NEW_2, -5.75);
+lemlib::TrackingWheel horizontal(&horizontalEnc, lemlib::Omniwheel::NEW_2, -4);
 // vertical tracking wheel. 2.75" diameter, 2.5" offset, left of the robot (negative)
-lemlib::TrackingWheel vertical(&verticalEnc, lemlib::Omniwheel::NEW_2, -2.5);
+lemlib::TrackingWheel vertical(&verticalEnc, lemlib::Omniwheel::NEW_2, 0);
 
 lemlib::OdomSensors sensors(&vertical, // vertical tracking wheel 1, set to null
                             nullptr, // vertical tracking wheel 2, set to nullptr as we are using IMEs
@@ -171,21 +171,25 @@ void autonomous() {
     // Reset position to (0,0,0) at start
     chassis.setPose(0, 0, 0);
     intake.move_velocity(127);
-    chassis.moveToPoint(3.043 , 32.767, 1500, {.maxSpeed = 100}); // move to 3 balls
+    chassis.moveToPose(-18.535, 15.627, -50, 1500, {.maxSpeed = 100});
+    pros::delay(400);
+    chassis.moveToPose(-30.359, 25.391, -50, 1500, {.maxSpeed = 40});
     pros::delay(500);
-    chassis.swingToHeading(20, lemlib::DriveSide::LEFT, 500); // turn to face small goal
-    chassis.moveToPoint(-2.455, -56.074, 1500, {.maxSpeed = 70}); // go to small goal
-    pros::delay(500);
-    chassis.moveToPoint(2, 2, 2); // go to a little before loader
-    solD.set_value(true); // activate solenoid to grab loader
-    chassis.moveToPoint(2,2,2); // move a little forward to secure loader
-    pros::delay(500);
-    chassis.moveToPoint(-2.455, -56.074, 1500, {.maxSpeed = 70}); // go to large goal
-    pros::delay(500);
-    intake.move_velocity(0);
+    chassis.turnToHeading(-36, 1500);
+    chassis.moveToPoint(-22.7, 29, 1500, {.forwards = false, .maxSpeed = 127}); 
+    intake2.move_velocity(127);
+    intake3.move_velocity(-127);
+    // pros::delay(500);
+    // chassis.moveToPoint(-4.582, -18.425, 1500, {.maxSpeed = 100}); // go to a little before loader
+    // pros::delay(500);
+    // solD.set_value(true);
+    // chassis.moveToPoint(-5.526, -15.160, 1500, {.maxSpeed = 100}); // activate solenoid to grab loader
+    // pros::delay(1500);
+    // chassis.moveToPoint(-1.367,-17.942,1500, {.forwards = false}); // move a little forward to secure loader
+    // intake.move_velocity(0);
     
     // if (isRedAlliance && isLeftSide) {
-    //     // ---- RED LEFT ----
+    //     // ---- RED LEFT ---- 
     //     intake.move_velocity(100);
         
     //     // Move to recorded coordinates
