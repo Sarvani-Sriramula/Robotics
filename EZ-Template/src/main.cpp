@@ -10,8 +10,7 @@ ez::Drive chassis(
     // These are your drive motors, the first motor is used for sensing!
     {-11, -12, -13},     // Left Chassis Ports (negative port will reverse it!)
     {18, 19, 20},  // Right Chassis Ports (negative port will reverse it!)
-
-    17,      // IMU Port
+    17,
     4.125,  // Wheel Diameter (Remember, 4" wheels without screw holes are actually 4.125!)
     600);   // Wheel RPM = cartridge * (motor gear / wheel gear)
 
@@ -19,10 +18,15 @@ pros::Motor intake(9);
 pros::Motor intake2(-1);
 pros::Motor intake3(10);
 
+ez::tracking_wheel vtracking(1, 2.75, 4.0);
+ez::tracking_wheel htracking(1, 2.75, 4.0);
+
 pros::ADIDigitalOut match ('A');
 pros::ADIDigitalOut wings ('B');
 
 pros::Optical color_sensor(3);  // Port 3
+
+
 
 
 
@@ -152,9 +156,9 @@ void autonomous() {
   
   if (isRedAlliance && isLeftSide) {
     // intake.move_velocity(127);
-    // chassis.pid_odom_set(-18.535_in, 15.627_in, -50_deg, 1500, {.maxSpeed = 100});
+    // chassis.pid_odom_set(-18.535, 15.627, -50, 1500, {.maxSpeed = 100});
     // pros::delay(400);
-    // chassis.pid_odom_set(-30.359_in, 25.391_in, -50_deg, 1500, {.maxSpeed = 40});
+    // chassis.odom_xyt_set(-30.359, 25.391, -50, 1500, {.maxSpeed = 40});
     // pros::delay(500);
   } else if (isRedAlliance && !isLeftSide) {
       ;
