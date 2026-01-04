@@ -18,11 +18,9 @@ pros::Motor intake(9);
 pros::Motor intake2(-1);
 pros::Motor intake3(10);
 
-ez::tracking_wheel vtracking(1, 2.75, 4.0);
-ez::tracking_wheel htracking(1, 2.75, 4.0);
-
-pros::ADIDigitalOut match ('A');
-pros::ADIDigitalOut wings ('B');
+pros::ADIDigitalOut match('A');
+pros::ADIDigitalOut wings('B');
+pros::ADIDigitalOut stopper('C');
 
 pros::Optical color_sensor(3);  // Port 3
 
@@ -147,29 +145,7 @@ bool isRedAlliance = true;
 bool isLeftSide = true;
 
 void autonomous() {
-  chassis.pid_targets_reset();                // Resets PID targets to 0
-  chassis.drive_imu_reset();                  // Reset gyro position to 0
-  chassis.drive_sensor_reset();               // Reset drive sensors to 0
-  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
-  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
-  chassis.odom_xyt_set(0_in, 0_in, 0_deg);  // Set starting position
-  
-  if (isRedAlliance && isLeftSide) {
-    // intake.move_velocity(127);
-    // chassis.pid_odom_set(-18.535, 15.627, -50, 1500, {.maxSpeed = 100});
-    // pros::delay(400);
-    // chassis.odom_xyt_set(-30.359, 25.391, -50, 1500, {.maxSpeed = 40});
-    // pros::delay(500);
-  } else if (isRedAlliance && !isLeftSide) {
-      ;
-  } else if (!isRedAlliance && isLeftSide) {
-      ;
-  } else if (!isRedAlliance && !isLeftSide) {
-      ;
-  }
-
-
-  /*
+    /*
   Odometry and Pure Pursuit are not magic
 
   It is possible to get perfectly consistent results without tracking wheels,
@@ -329,7 +305,7 @@ void opcontrol() {
         
         bool current_r1 = master.get_digital(pros::E_CONTROLLER_DIGITAL_R1);
         bool current_r2 = master.get_digital(pros::E_CONTROLLER_DIGITAL_R2);
-        bool current_l1 = master.get_digital(pros::E_CONTROLLER_DIGITAL_L1);
+        // bool current_l1 = master.get_digital(pros::E_CONTROLLER_DIGITAL_L1);
         bool current_l2 = master.get_digital(pros::E_CONTROLLER_DIGITAL_L2);
         
         // Toggle forward on R1
@@ -347,10 +323,10 @@ void opcontrol() {
         last_r2_state = current_r2;
 
         // Toggle reverse on L1
-        if (current_l1 && !last_l1_state) {
-            single_intake_mode = !single_intake_mode;  // Toggle reverse
-        }
-        last_l1_state = current_l1;
+        // if (current_l1 && !last_l1_state) {
+        //     single_intake_mode = !single_intake_mode;  // Toggle reverse
+        // }
+        // last_l1_state = current_l1;
 
         // Toggle reverse on L2
         if (current_l2 && !last_l2_state) {
@@ -416,6 +392,16 @@ void opcontrol() {
         static bool wings_state = false;
         static bool b_last_state = false;
         bool b_current_state = master.get_digital(pros::E_CONTROLLER_DIGITAL_B);
+        
+        if (b_current_state && !b_last_state) {  // L2 just pressed
+            wings_state = !wings_state;    // Toggle state
+            wings.set_value(wings_state);  // Set solenoid B to new state
+        } 
+        b_last_state = b_current_state;
+
+        static bool stopper_state = false;
+        static bool l1_last_state = false;
+        bool l1_current_state = master.get_digital(pros::E_CONTROLLER_DIGITAL_B);
         
         if (b_current_state && !b_last_state) {  // L2 just pressed
             wings_state = !wings_state;    // Toggle state

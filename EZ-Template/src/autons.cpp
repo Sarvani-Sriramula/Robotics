@@ -1,23 +1,38 @@
+#include "EZ-Template/drive/drive.hpp"
 #include "main.h" // IWYU pragma: keep
+#include "pros/rtos.hpp"
+#include "subsystems.hpp"
 
 /////
 // For installation, upgrading, documentations, and tutorials, check out our website!
 // https://ez-robotics.github.io/EZ-Template/
 /////
 
+// Chassis constructor
+
+extern pros::Motor intake;
+extern pros::Motor intake2;
+extern pros::Motor intake3;
+
+extern pros::ADIDigitalOut match;
+extern pros::ADIDigitalOut wings;
+extern pros::ADIDigitalOut stopper; 
+
+extern pros::Optical color_sensor;
+
 // These are out of 127
-const int DRIVE_SPEED = 110;
+const int DRIVE_SPEED = 127;
 const int TURN_SPEED = 90;
-const int SWING_SPEED = 110;
+const int SWING_SPEED = 127;
 
 ///
 // Constants
 ///
 void default_constants() {
   // P, I, D, and Start I
-  chassis.pid_drive_constants_set(20.0, 0.0, 100.0);         // Fwd/rev constants, used for odom and non odom motions
+  chassis.pid_drive_constants_set(6.7, 0.0, 15);         // Fwd/rev constants, used for odom and non odom motions
   chassis.pid_heading_constants_set(11.0, 0.0, 20.0);        // Holds the robot straight while going forward without odom
-  chassis.pid_turn_constants_set(3.0, 0.05, 20.0, 15.0);     // Turn in place constants
+  chassis.pid_turn_constants_set(3.0, 0.0, 20.0, 15.0);     // Turn in place constants
   chassis.pid_swing_constants_set(6.0, 0.0, 65.0);           // Swing constants
   chassis.pid_odom_angular_constants_set(6.5, 0.0, 52.5);    // Angular control for odom motions
   chassis.pid_odom_boomerang_constants_set(5.8, 0.0, 32.5);  // Angular control for boomerang motions
@@ -57,14 +72,603 @@ void drive_example() {
   // The third parameter is a boolean (true or false) for enabling/disabling a slew at the start of drive motions
   // for slew, only enable it when the drive distance is greater than the slew distance + a few inches
 
-  chassis.pid_drive_set(24_in, DRIVE_SPEED, true);
-  chassis.pid_wait();
+  // LEFTSIDE AUTOS
+  
+//   stopper.set_value(false);
+  
 
-  chassis.pid_drive_set(-12_in, DRIVE_SPEED);
-  chassis.pid_wait();
+//   chassis.pid_drive_set(32_in, 90,true); //move to match load
+//   chassis.pid_wait();
 
-  chassis.pid_drive_set(-12_in, DRIVE_SPEED);
-  chassis.pid_wait();
+//   chassis.pid_turn_set(-90_deg, 90); //turnt to matchload
+//   chassis.pid_wait();
+
+//   intake.move_velocity(300); //turn on intake
+//   intake2.move_velocity(300);
+//   intake3.move_velocity(300);
+
+
+//   match.set_value(true);  //matchload down
+//   pros::delay(300);
+
+//   chassis.pid_drive_set(17_in, 60, true); //matchload 3 balls
+//   chassis.pid_wait();
+  
+
+//   // intake.move_velocity(-300); //pulse
+//   // intake2.move_velocity(-300);
+//   // intake3.move_velocity(-300);
+//   // pros::delay(50);
+
+//   intake.move_velocity(300); //spin
+//   intake2.move_velocity(300);
+//   intake3.move_velocity(300);
+
+//   chassis.pid_drive_set(-34_in, 70);//ne up for long goal scoring
+//   pros::delay(420);
+//   stopper.set_value(true);//stopper toggle
+//   chassis.pid_wait();
+
+//   // intake.move_velocity(-300); //pulse
+//   // intake2.move_velocity(-300);
+//   // intake3.move_velocity(-300);
+//   // pros::delay(50);
+
+//   // intake.move_velocity(300); //score
+//   // intake2.move_velocity(300);
+//   // intake3.move_velocity(300);
+
+
+
+//   match.set_value(false); //close matchloader
+
+//   chassis.pid_drive_set(18_in, 90, false); //move back 
+//   chassis.pid_wait();
+
+//   stopper.set_value(false);//stopper toggle
+
+//   chassis.pid_turn_set(140_deg, 90);//turn to blocks
+//   chassis.pid_wait();
+
+//   chassis.pid_drive_set(25_in,90);//move to intake blocks
+//   chassis.pid_wait();
+
+//  intake.move_velocity(300); //outtake into mid goal
+//   intake2.move_velocity(300);
+//   intake3.move_velocity(-300);
+
+//   chassis.pid_drive_set( 13_in,40);//move to intake blocks
+//   chassis.pid_wait();
+
+//   chassis.pid_turn_set(320_deg, 70); //turn to blocks
+//   chassis.pid_wait();
+
+
+//   chassis.pid_drive_set(-14_in,70); 
+//   pros::delay(300);
+//   stopper.set_value(true);
+//   chassis.pid_wait();
+
+//   pros::delay(300);
+
+//   chassis.pid_drive_set(-48_in, 127);//back to highgoal
+//   chassis.pid_wait();
+
+//  wings.set_value(false);
+
+//   chassis.pid_turn_set(90_deg, 127); //turn to goal
+//   chassis.pid_wait();
+
+//  wings.set_value(true);
+
+//   chassis.pid_drive_set(10_in, 100);//push blocks 
+//   chassis.pid_wait();
+
+//==============================================================================================
+//RIGHTSIDE
+
+//   stopper.set_value(false);
+  
+
+//   chassis.pid_drive_set(32_in, 90,true); //move to match load
+//   chassis.pid_wait();
+
+//   chassis.pid_turn_set(90_deg, 90); //turnt to matchload
+//   chassis.pid_wait();
+
+//   intake.move_velocity(300); //turn on intake
+//   intake2.move_velocity(300);
+//   intake3.move_velocity(300);
+
+//   match.set_value(true);  //matchload down
+//   pros::delay(300);
+
+//   chassis.pid_drive_set(17_in, 60, true); //matchload 3 balls
+//   chassis.pid_wait();
+  
+
+//   // intake.move_velocity(-300); //pulse
+//   // intake2.move_velocity(-300);
+//   // intake3.move_velocity(-300);
+//   // pros::delay(50);
+
+//   intake.move_velocity(300); //spin
+//   intake2.move_velocity(300);
+//   intake3.move_velocity(300);
+
+//   chassis.pid_drive_set(-34_in, 70);//ne up for long goal scoring
+//   pros::delay(420);
+//   stopper.set_value(true);//stopper toggle
+//   chassis.pid_wait();
+
+//   // intake.move_velocity(-300); //pulse
+//   // intake2.move_velocity(-300);
+//   // intake3.move_velocity(-300);
+//   // pros::delay(50);
+
+//   intake.move_velocity(300); //score
+//   intake2.move_velocity(300);
+//   intake3.move_velocity(300);
+
+
+
+//   match.set_value(false); //close matchloader
+
+//   chassis.pid_drive_set(18_in, 90, false); //move back 
+//   chassis.pid_wait();
+
+//   stopper.set_value(false);//stopper toggle
+
+//   chassis.pid_turn_set(-135_deg, 90);//turn to blocks
+//   chassis.pid_wait();
+
+//   chassis.pid_drive_set(25_in,90);//move to intake blocks
+//   chassis.pid_wait();
+
+//   intake.move_velocity(300); //outtake into mid goal
+//   intake2.move_velocity(300);
+//   intake3.move_velocity(-300);
+
+//   chassis.pid_drive_set( 27_in,40);//move to intake blocks
+//   chassis.pid_wait();
+
+//  // chassis.pid_turn_set(-320_deg, 70); //turn to blocks
+//   chassis.pid_wait();
+
+
+//   // chassis.pid_drive_set(-14_in,70); 
+//   pros::delay(300);
+//   stopper.set_value(true);
+//   chassis.pid_wait();
+
+//   intake.move_velocity(-300); //outtake into lower goal
+//   intake2.move_velocity(-300);
+//   intake3.move_velocity(-300);
+
+//   pros::delay(1000);
+
+// //new 
+
+//   chassis.pid_drive_set(-44_in, 127);//back to highgoal
+//   chassis.pid_wait();
+
+//   wings.set_value(false);
+
+//   chassis.pid_turn_set(90_deg, 127); //turn to goal
+//   chassis.pid_wait();
+
+//   wings.set_value(true);
+
+//   chassis.pid_drive_set(10_in, 100);//push blocks 
+//   chassis.pid_wait();
+
+
+//============================================================================================
+//SOLO AWP
+
+  // stopper.set_value(false);
+  
+
+  // chassis.pid_drive_set(32_in, 110,true); //move to match load
+  // chassis.pid_wait_quick();
+
+  // chassis.pid_turn_set(-90_deg, 110); //turnt to matchload
+  // chassis.pid_wait_quick();
+
+  // intake.move_velocity(300); //turn on intake
+  // intake2.move_velocity(300);
+  // intake3.move_velocity(300);
+
+
+  // match.set_value(true);  //matchload down
+  // pros::delay(100);
+
+  // chassis.pid_drive_set(17_in, 70); //matchload 3 balls
+  // chassis.pid_wait();
+  
+
+  // intake.move_velocity(-300); //pulse
+  // intake2.move_velocity(-300);
+  // intake3.move_velocity(-300);
+  // pros::delay(50);
+
+  // intake.move_velocity(300); //spin
+  // intake2.move_velocity(300);
+  // intake3.move_velocity(300);
+
+  // chassis.pid_drive_set(-34_in, 110);//line up for long goal scoring
+  // stopper.set_value(true);//stopper toggle
+  // pros::delay(250);
+  // chassis.pid_wait();
+
+  // intake.move_velocity(-300); //pulse
+  // intake2.move_velocity(-300);
+  // intake3.move_velocity(-300);
+  // pros::delay(50);
+
+  // intake.move_velocity(300); //score
+  // intake2.move_velocity(300);
+  // intake3.move_velocity(300);
+
+  // match.set_value(false); //close matchloader
+
+  // chassis.pid_drive_set(16_in, 110); //move back 
+  // chassis.pid_wait_quick();
+
+  // stopper.set_value(false);//stopper toggle
+
+  // chassis.pid_turn_set(145_deg, 90);//turn to blocks
+  // chassis.pid_wait_quick();
+
+  // chassis.pid_drive_set(32_in,90);//move to intake blocks
+  // chassis.pid_wait();
+  // match.set_value(true);
+  // intake.move_velocity(100); //outtake into mid goal
+  // intake2.move_velocity(110);
+  // intake3.move_velocity(-110);
+  // chassis.pid_wait_quick(); 
+  //chassis.pid_drive_set( 13_in,75);//move 
+  
+
+
+  // chassis.pid_turn_set(320_deg, 80); //turn to blocks
+  // chassis.pid_wait_quick();
+
+  // chassis.pid_drive_set(-20_in,110); 
+  // stopper.set_value(true);
+  // chassis.pid_wait_quick();
+
+  // pros::delay(300);
+
+  // chassis.pid_drive_set(7_in, 127); // back out
+  // chassis.pid_wait_quick();
+
+  // chassis.pid_turn_set(210, 127); // turn to loader
+  // chassis.pid_wait_quick();
+
+  // chassis.pid_drive_set(70_in, 127); // drive to matchload
+  // chassis.pid_wait_quick();
+
+  // chassis.pid_turn_set(-90_deg, 127); //turnt to matchload
+  // chassis.pid_wait_quick();
+
+  // intake.move_velocity(300); //turn on intake
+  // intake2.move_velocity(300);
+  // intake3.move_velocity(300);
+
+
+  // match.set_value(true);  //matchload down
+  // pros::delay(150);
+
+  // chassis.pid_drive_set(17_in, 70); //matchload 3 balls
+  // chassis.pid_wait_quick();
+  
+
+  // intake.move_velocity(-300); //pulse
+  // intake2.move_velocity(-300);
+  // intake3.move_velocity(-300);
+  // pros::delay(50);
+
+  // intake.move_velocity(300); //spin
+  // intake2.move_velocity(300);
+  // intake3.move_velocity(300);
+
+  // chassis.pid_drive_set(-34_in, 110);//ne up for long goal scoring
+  // pros::delay(300);
+  // stopper.set_value(true);//stopper toggle
+  // chassis.pid_wait_quick();
+
+
+//===========================================================================================================
+//SOLO AWP V2 RIGHTSIDE
+
+  // stopper.set_value(false);
+  
+
+  // chassis.pid_drive_set(32_in, 110); //move to match load
+  // chassis.pid_wait();
+
+  // chassis.pid_turn_set(90_deg, 110); //turnt to matchload
+  // chassis.pid_wait();
+
+  // intake.move_velocity(300); //turn on intake
+  // intake2.move_velocity(300);
+  // intake3.move_velocity(300);
+
+  // match.set_value(true);  //matchload down
+  // pros::delay(50);
+
+  // chassis.pid_drive_set(17_in, 90); //matchload 3 balls
+  // chassis.pid_wait();
+
+  
+
+  // // intake.move_velocity(-300); //pulse
+  // // intake2.move_velocity(-300);
+  // // intake3.move_velocity(-300);
+  // // pros::delay(50);
+
+  // intake.move_velocity(300); //spin
+  // intake2.move_velocity(300);
+  // intake3.move_velocity(300);
+
+  // chassis.pid_drive_set(-34_in, 110);//ne up for long goal scoring
+  // chassis.pid_wait();
+  // stopper.set_value(true);//stopper toggle
+  // pros::delay(200);
+  // chassis.pid_wait();
+
+  // // intake.move_velocity(-300); //pulse
+  // // intake2.move_velocity(-300);
+  // // intake3.move_velocity(-300);
+  // // pros::delay(50);
+
+  // intake.move_velocity(300); //score
+  // intake2.move_velocity(300);
+  // intake3.move_velocity(300);
+
+
+
+  // match.set_value(false); //close matchloader
+  // stopper.set_value(false);
+  // chassis.pid_wait();
+
+
+  // chassis.pid_drive_set(20_in, 100, false); //move back 
+  // match.set_value(false);//stopper toggle
+  // chassis.pid_wait();
+
+
+  // chassis.pid_turn_set(-135_deg, 100);//turn to blocks
+  // chassis.pid_wait();
+
+  // chassis.pid_drive_set(32_in, 70);//move to intake blocks
+  // chassis.pid_wait_quick();
+
+
+
+  // chassis.pid_turn_set(-180_deg, 100);//turn to other blocks
+  // chassis.pid_wait_quick();
+
+
+
+
+  // chassis.pid_drive_set(50_in, 70);//move to intake 3 blocks on leftside
+  // chassis.pid_wait();
+
+  // chassis.pid_turn_set(135_deg, 100);//turn to mid goal
+  // chassis.pid_wait_quick();
+
+  // chassis.pid_drive_set(-19_in, 100);//move to score
+
+
+  // stopper.set_value(true);
+  // intake.move_velocity(300); //score
+  // intake2.move_velocity(300);
+  // intake3.move_velocity(-300);
+
+
+
+//===========================================================================================================
+//Auto Skills
+
+  // stopper.set_value(false);
+  // intake.move_velocity(300); //turn on intake
+  // intake2.move_velocity(300);
+  // intake3.move_velocity(300);
+
+  
+
+  // chassis.pid_drive_set(12_in, 127); //get the 6 balls in the goal
+  // chassis.pid_wait();
+
+  // chassis.pid_turn_set(20_deg, 127); // wiggle
+  // chassis.pid_wait();
+
+  // chassis.pid_turn_set(-20_deg, 127); // wiggle some more
+  // chassis.pid_wait();
+
+  // chassis.pid_turn_set(20_deg, 127); // wiggle some more
+  // chassis.pid_wait();
+
+  // chassis.pid_turn_set(0_deg, 127); // reset
+  // chassis.pid_wait();
+  // pros::delay(200);
+
+  // chassis.pid_drive_set(-20_in, 100); //move out of goal
+  // chassis.pid_wait();
+
+  // chassis.pid_turn_set(140_deg, 100); // turn to 4 blocks 
+  // pros::delay(100);
+  // chassis.pid_wait();
+  // chassis.pid_drive_set(-27_in, 100); //move to 4 blocks
+  // chassis.pid_wait();
+
+  // chassis.pid_turn_set(225_deg, 100); // turn to low goal
+  // chassis.pid_wait();
+
+  // chassis.pid_drive_set(10_in, 100); //move to low goal
+  // chassis.pid_wait();
+
+  // chassis.pid_drive_set(-15_in, 100); //move to low goal
+  // chassis.pid_wait();
+
+  // stopper.set_value(true);
+  // intake.move_velocity(300); //outake onto high midgoal
+  // intake2.move_velocity(300);
+  // intake3.move_velocity(-300);
+
+  // chassis.pid_drive_set(50_in, 100); //move infront of matchloader
+  // chassis.pid_wait();
+
+  // chassis.pid_turn_set(180_deg, 100); // turn to high goal
+  // chassis.pid_wait();
+
+  // stopper.set_value(false);
+  // intake.move_velocity(300); //turn on intake
+  // intake2.move_velocity(300);
+  // intake3.move_velocity(300);
+
+  // match.set_value(true);  //matchload down
+  // pros::delay(100);
+
+  // chassis.pid_drive_set(23_in, 100); //drive into matchload
+  // chassis.pid_wait();
+  // pros::delay(300);
+
+  // chassis.pid_drive_set(-10_in, 100); //drive out of matchload
+  // chassis.pid_wait();
+
+  // match.set_value(false);  //matchload up
+  // pros::delay(100);
+
+  // chassis.pid_turn_set(124_deg, 100); // turn to side of low goal
+  // chassis.pid_wait();
+
+  // chassis.pid_drive_set(-19_in, 100); //drive out of matchload
+  // chassis.pid_wait();
+
+  // chassis.pid_turn_set(180_deg, 100); // turn to side of low goal
+  // chassis.pid_wait();
+
+  // chassis.pid_drive_set(-94_in, 100); //drive to other side
+  // chassis.pid_wait();
+
+  // chassis.pid_turn_set(90_deg, 100); // turn to side of low goal
+  // chassis.pid_wait();
+
+  // chassis.pid_drive_set(10_in, 100); //drive into highgoal
+  // chassis.pid_wait();
+
+  // chassis.pid_turn_set(0_deg, 100); // make aligner face back
+  // chassis.pid_wait();
+
+  // chassis.pid_drive_set(-29_in, 100); //drive into highgoal
+
+  // stopper.set_value(true); //score
+  // intake.move_velocity(300); 
+  // intake2.move_velocity(300);
+  // intake3.move_velocity(300);
+  // chassis.pid_wait();
+
+  // pros::delay(100);
+
+  // stopper.set_value(false);
+  // match.set_value(true);  //matchload down
+  // pros::delay(100);
+
+  // chassis.pid_drive_set(34_in, 100); //drive to matchload
+  // chassis.pid_wait();
+  // pros::delay(200);
+
+  // chassis.pid_drive_set(-34_in, 100); //drive to highgoal
+  // chassis.pid_wait();
+
+  // stopper.set_value(true); //score
+  // pros::delay(200);
+
+  // chassis.pid_drive_set(10_in, 100); //drive out of highgoal
+  // chassis.pid_wait();
+
+  // chassis.pid_turn_set(90_deg, 100); // turn to other side
+  // chassis.pid_wait();
+
+  // chassis.pid_drive_set(95_in, 100); //drive to other highgoal
+  // chassis.pid_wait();
+
+  // chassis.pid_turn_set(0_deg, 100); // turn to match loader
+  // chassis.pid_wait();
+
+  // chassis.pid_drive_set(24_in, 100); //drive to matchloader
+  // chassis.pid_wait();
+
+  // match.set_value(true);  //matchload down
+  // pros::delay(50);
+
+  // pros::delay(200); // wait for matchloads
+
+  // chassis.pid_drive_set(-10_in, 100); //drive out of matchload
+  // chassis.pid_wait();
+
+  // chassis.pid_turn_set(124_deg, 100); // turn to side of low goal
+  // chassis.pid_wait();
+
+  // chassis.pid_drive_set(19_in, 100); //drive to outside of high goal 
+  // chassis.pid_wait();
+
+  // chassis.pid_turn_set(180_deg, 100); // turn to side of low goal
+  // chassis.pid_wait();
+
+  // chassis.pid_drive_set(94_in, 100); //drive to outside of high goal 
+  // chassis.pid_wait();
+
+  // chassis.pid_turn_set(270_deg, 100); // turn to side of low goal
+  // chassis.pid_wait();
+
+  // chassis.pid_drive_set(10_in, 100); //drive into highgoal
+  // chassis.pid_wait();
+
+  // chassis.pid_turn_set(180_deg, 100); // turn to side of low goal
+  // // chassis.pid_wait();
+
+  // chassis.pid_drive_set(-29_in, 100); //drive into highgoal
+
+  // stopper.set_value(true); //score
+  // intake.move_velocity(300); 
+  // intake2.move_velocity(300);
+  // intake3.move_velocity(300);
+  // chassis.pid_wait();
+
+  // pros::delay(100);
+
+  // stopper.set_value(false);
+  // match.set_value(true);  //matchload down
+  // pros::delay(100);
+
+  // chassis.pid_drive_set(34_in, 100); //drive to matchload
+  // chassis.pid_wait();
+  // pros::delay(200);
+
+  // chassis.pid_drive_set(-34_in, 100); //drive to highgoal
+  // chassis.pid_wait();
+
+  // stopper.set_value(true); //score
+  // pros::delay(200);
+
+  // chassis.pid_drive_set(10_in, 100); //drive out of highgoal
+  // chassis.pid_wait();
+
+  // chassis.pid_turn_set(270_deg, 100); // turn to other side
+  // chassis.pid_wait();
+
+  // chassis.pid_drive_set(48_in, 100); //drive to red parking spot 
+  // chassis.pid_wait();
+
+  // chassis.pid_turn_set(180_deg, 100);
+  // chassis.pid_wait();
+
+  // chassis.pid_drive_set(20_in, 100); //drive to matchloader
+  // chassis.pid_wait();
 }
 
 ///
@@ -75,13 +679,7 @@ void turn_example() {
   // The second parameter is max speed the robot will drive at
 
   chassis.pid_turn_set(90_deg, TURN_SPEED);
-  chassis.pid_wait();
-
-  chassis.pid_turn_set(45_deg, TURN_SPEED);
-  chassis.pid_wait();
-
-  chassis.pid_turn_set(0_deg, TURN_SPEED);
-  chassis.pid_wait();
+ 
 }
 
 ///
@@ -334,7 +932,7 @@ void measure_offsets() {
     chassis.pid_targets_reset();
     chassis.drive_imu_reset();
     chassis.drive_sensor_reset();
-    chassis.drive_brake_set(MOTOR_BRAKE_HOLD);
+    chassis.drive_brake_set(pros::E_MOTOR_BRAKE_HOLD);
     chassis.odom_xyt_set(0_in, 0_in, 0_deg);
     double imu_start = chassis.odom_theta_get();
     double target = i % 2 == 0 ? 90 : 270;  // Switch the turn target every run from 270 to 90
