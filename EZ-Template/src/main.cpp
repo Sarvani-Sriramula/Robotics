@@ -10,21 +10,25 @@ ez::Drive chassis(
     // These are your drive motors, the first motor is used for sensing!
     {-11, -12, -13},     // Left Chassis Ports (negative port will reverse it!)
     {18, 19, 20},  // Right Chassis Ports (negative port will reverse it!)
-    17,
-    4.125,  // Wheel Diameter (Remember, 4" wheels without screw holes are actually 4.125!)
-    600);   // Wheel RPM = cartridge * (motor gear / wheel gear)
+
+    17,      // IMU Port
+    3.25,  // Wheel Diameter (Remember, 4" wheels without screw holes are actually 4.125!)
+    450);   // Wheel RPM = cartridge * (motor gear / wheel gear)
+
+pros::MotorGroup left_motors({-11, -1, -13}, pros::MotorGearset::blue); // left motors use 600 RPM cartridges
+pros::MotorGroup right_motors({18, 19, 20}, pros::MotorGearset::blue); // right motors use 600 RPM cartridges
 
 pros::Motor intake(9);
 pros::Motor intake2(-1);
-pros::Motor intake3(10);
+pros::Motor intake3(7);
 
-pros::ADIDigitalOut match('A');
-pros::ADIDigitalOut wings('B');
-pros::ADIDigitalOut stopper('C');
+
+
+pros::ADIDigitalOut match ('A');
+pros::ADIDigitalOut wings ('B');
+pros::ADIDigitalOut stopper ('C');
 
 pros::Optical color_sensor(3);  // Port 3
-
-
 
 
 
@@ -72,7 +76,7 @@ void initialize() {
 
   // Configure your chassis controls
   chassis.opcontrol_curve_buttons_toggle(true);   // Enables modifying the controller curve with buttons on the joysticks
-  chassis.opcontrol_drive_activebrake_set(0.0);   // Sets the active brake kP. We recommend ~2.  0 will disable.
+  chassis.opcontrol_drive_activebrake_set(2);   // Sets the active brake kP. We recommend ~2.  0 will disable.
   chassis.opcontrol_curve_default_set(0.0, 0.0);  // Defaults for curve. If using tank, only the first parameter is used. (Comment this line out if you have an SD card!)
 
   // Set the drive to your own constants from autons.cpp!
@@ -145,7 +149,29 @@ bool isRedAlliance = true;
 bool isLeftSide = true;
 
 void autonomous() {
-    /*
+  chassis.pid_targets_reset();                // Resets PID targets to 0
+  chassis.drive_imu_reset();                  // Reset gyro position to 0
+  chassis.drive_sensor_reset();               // Reset drive sensors to 0
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);    // Set the current position, you can start at a specific position with this
+  chassis.drive_brake_set(MOTOR_BRAKE_HOLD);  // Set motors to hold.  This helps autonomous consistency
+  chassis.odom_xyt_set(0_in, 0_in, 0_deg);  // Set starting position
+  
+  if (isRedAlliance && isLeftSide) {
+    // intake.move_velocity(127);
+    // chassis.pid_odom_set(-18.535_in, 15.627_in, -50_deg, 1500, {.maxSpeed = 100});
+    // pros::delay(400);
+    // chassis.pid_odom_set(-30.359_in, 25.391_in, -50_deg, 1500, {.maxSpeed = 40});
+    // pros::delay(500);
+  } else if (isRedAlliance && !isLeftSide) {
+      ;
+  } else if (!isRedAlliance && isLeftSide) {
+      ;
+  } else if (!isRedAlliance && !isLeftSide) {
+      ;
+  }
+
+
+  /*
   Odometry and Pure Pursuit are not magic
 
   It is possible to get perfectly consistent results without tracking wheels,
@@ -267,11 +293,13 @@ void ez_template_extras() {
 void opcontrol() {
   // This is preference to what you like to drive on
   // chassis.drive_brake_set(MOTOR_BRAKE_COAST);
+  wings.set_value(true);
+
 
   while (true) {
     // Gives you some extras to make EZ-Template ezier
     // ez_template_extras();
-
+  
     chassis.opcontrol_arcade_standard(ez::SPLIT);  // Single Stick Arcade Control
 
     // int dir = master.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y);
@@ -342,7 +370,7 @@ void opcontrol() {
               if (hue < 30 || hue > 330) {  // Red detected
                   intake.move(127);
                   intake2.move(127);
-                  intake3.move(-127);
+                  intake3.move(127);
               } else if (hue > 180 && hue < 270) {  // Blue detected
                   intake.move(-127);
                   intake2.move(-127);
@@ -353,9 +381,9 @@ void opcontrol() {
               if (hue > 180 && hue < 270) {  // Blue detected
                   intake.move(127);
                   intake2.move(127);
-                  intake3.move(-127);
+                  intake3.move(127);
               } else if (hue < 30 || hue > 330) {  // Red detected
-                  intake.move(-127);
+                  intake.move(127);
                   intake2.move(-127);
                   intake3.move(-127);
               }
@@ -385,7 +413,7 @@ void opcontrol() {
         
         if (a_current_state && !a_last_state) {  // L1 just pressed
             match_state = !match_state;    // Toggle state
-            match.set_value(match_state);  // Set solenoid D to new state
+            match.set_value(match_state);  // Set solenoid A to new state
         }
         a_last_state = a_current_state;
 
@@ -401,13 +429,13 @@ void opcontrol() {
 
         static bool stopper_state = false;
         static bool l1_last_state = false;
-        bool l1_current_state = master.get_digital(pros::E_CONTROLLER_DIGITAL_B);
+        bool l1_current_state = master.get_digital(pros::E_CONTROLLER_DIGITAL_L1);
         
-        if (b_current_state && !b_last_state) {  // L2 just pressed
-            wings_state = !wings_state;    // Toggle state
-            wings.set_value(wings_state);  // Set solenoid B to new state
+        if (l1_current_state && !l1_last_state) {  // L1 just pressed
+            stopper_state = !stopper_state;    // Toggle state
+            stopper.set_value(stopper_state);  // Set solenoid C to new state
         } 
-        b_last_state = b_current_state;
+        l1_last_state = l1_current_state;
 
     pros::delay(ez::util::DELAY_TIME);  // This is used for timer calculations!  Keep this ez::util::DELAY_TIME
   }
